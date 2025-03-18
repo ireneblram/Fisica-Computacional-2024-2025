@@ -4,10 +4,10 @@ import matplotlib.pyplot as plt
 
 # Crear un rango de valores para x
 x = np.linspace(0, 2 * np.pi, 500)
-
+#Comentario de prueba
 # Calcular seno y coseno
 y_sin = np.sin(x)
-y_cos = np.cos(x)
+y_cos = np.cos(2*x)
 
 # Crear la gráfica
 plt.figure(figsize=(8, 6))

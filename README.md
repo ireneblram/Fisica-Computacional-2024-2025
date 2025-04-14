@@ -1,1 +1,1 @@
-Repositorio para subir mis programas de fisica computacional
+Repositorio para subir mis programas de física computacional

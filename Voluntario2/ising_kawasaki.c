@@ -293,17 +293,6 @@ int main() {
     // Guardar configuración inicial
     Guardar_Red(archivo, red);
 
-    // Abrir archivos para guardar los valores cada 100 pasos (solo valores, sin texto)
-    FILE *fmag = fopen("magnetizacion.txt", "w");
-    FILE *fdens = fopen("densidad_media.txt", "w");
-    FILE *fener = fopen("energia_media.txt", "w");
-    FILE *fcalor = fopen("calor_especifico.txt", "w");
-    FILE *fsusc = fopen("susceptibilidad.txt", "w");
-    if (!fmag || !fdens || !fener || !fcalor || !fsusc) {
-        printf("No se pudieron abrir los archivos de salida.\n");
-        return 1;
-    }
-
     // Array para almacenar magnetizaciones, densidad, energía, calor específico y susceptibilidad
     int num_medidas = pasos / 100;
     double mags_sup[num_medidas];
@@ -343,26 +332,15 @@ int main() {
             // Susceptibilidad magnética usando todas las magnetizaciones superiores hasta ahora
             suscepts[medida_idx] = susceptibilidad_magnetica(mags_sup, medida_idx + 1, T);
 
-            // Guardar solo los valores en los archivos (sin texto, solo números)
-            fprintf(fmag, "%.10f\t%.10f\n", m_sup, m_inf);
-            fprintf(fdens, "%.10f\n", densidad);
-            fprintf(fener, "%.10f\n", energia / (2.0 * N * N));
-            fprintf(fcalor, "%.10f\n", calores[medida_idx]);
-            fprintf(fsusc, "%.10f\n", suscepts[medida_idx]);
-
             medida_idx++;
         }
     }
 
     fclose(archivo);
-    fclose(fmag);
-    fclose(fdens);
-    fclose(fener);
-    fclose(fcalor);
-    fclose(fsusc);
 
     // Calcular la media de las magnetizaciones, densidad, energía, calor específico y susceptibilidad
     double suma_sup = 0.0, suma_inf = 0.0, suma_dens = 0.0, suma_energia = 0.0, suma_calor = 0.0, suma_susc = 0.0;
+    double suma_sup2 = 0.0, suma_inf2 = 0.0, suma_dens2 = 0.0, suma_energia2 = 0.0, suma_calor2 = 0.0, suma_susc2 = 0.0;
     for (i = 0; i < medida_idx; i++) {
         suma_sup += mags_sup[i];
         suma_inf += mags_inf[i];
@@ -370,6 +348,13 @@ int main() {
         suma_energia += energias[i];
         suma_calor += calores[i];
         suma_susc += suscepts[i];
+
+        suma_sup2 += mags_sup[i] * mags_sup[i];
+        suma_inf2 += mags_inf[i] * mags_inf[i];
+        suma_dens2 += densidades[i] * densidades[i];
+        suma_energia2 += energias[i] * energias[i];
+        suma_calor2 += calores[i] * calores[i];
+        suma_susc2 += suscepts[i] * suscepts[i];
     }
     double media_sup = suma_sup / medida_idx;
     double media_inf = suma_inf / medida_idx;
@@ -378,15 +363,23 @@ int main() {
     double media_calor = suma_calor / medida_idx;
     double media_susc = suma_susc / medida_idx;
 
+    // Desviaciones típicas (desviación estándar)
+    double std_sup = sqrt(suma_sup2 / medida_idx - media_sup * media_sup);
+    double std_inf = sqrt(suma_inf2 / medida_idx - media_inf * media_inf);
+    double std_dens = sqrt(suma_dens2 / medida_idx - media_dens * media_dens);
+    double std_energia = sqrt(suma_energia2 / medida_idx - media_energia * media_energia);
+    double std_calor = sqrt(suma_calor2 / medida_idx - media_calor * media_calor);
+    double std_susc = sqrt(suma_susc2 / medida_idx - media_susc * media_susc);
+
     printf("\nConfiguración final de la red:\n");
     Mostrar_Red(red);
 
-    printf("\nMagnetización media superior (cada 100 pasos): %f\n", media_sup);
-    printf("Magnetización media inferior (cada 100 pasos): %f\n", media_inf);
-    printf("Densidad media en dirección Y (fila %d, cada 100 pasos): %f\n", N/2, media_dens);
-    printf("Energía media por partícula (cada 100 pasos): %f\n", media_energia / (2.0 * N * N));
-    printf("Calor específico medio (cada 100 pasos): %f\n", media_calor);
-    printf("Susceptibilidad magnética media (cada 100 pasos): %.10f\n", media_susc);
+    printf("\nMagnetización media superior (cada 100 pasos): %f ± %f\n", media_sup, std_sup);
+    printf("Magnetización media inferior (cada 100 pasos): %f ± %f\n", media_inf, std_inf);
+    printf("Densidad media en dirección Y (fila %d, cada 100 pasos): %f ± %f\n", N/2, media_dens, std_dens);
+    printf("Energía media por partícula (cada 100 pasos): %f ± %f\n", media_energia / (2.0 * N * N), std_energia / (2.0 * N * N));
+    printf("Calor específico medio (cada 100 pasos): %f ± %f\n", media_calor, std_calor);
+    printf("Susceptibilidad magnética media (cada 100 pasos): %.10f ± %.10f\n", media_susc, std_susc);
 
     // Medir el tiempo de finalización
     clock_t fin = clock();

@@ -2,10 +2,9 @@
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
-
 #define N 32 // Dimensión de la red cuadrada
 #define pasos 100000 //Número de pasos de Monte Carlo 
-#define T 7.0 // Temperatura inicial
+#define T 1.5 // Temperatura inicial
 // K_BOLTZMANN 1.0 Constante de Boltzmann se ha normlizado a 1.0 tal que beta = 1/T
 
 // Función para inicializar la red con magnetización nula desordenada

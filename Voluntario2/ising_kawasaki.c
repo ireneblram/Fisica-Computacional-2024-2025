@@ -2,13 +2,14 @@
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
+
 #define N 32 // Dimensión de la red cuadrada
 #define pasos 100000 //Número de pasos de Monte Carlo 
-#define T 1.5 // Temperatura inicial
+#define T 1.0 // Temperatura inicial
 // K_BOLTZMANN 1.0 Constante de Boltzmann se ha normlizado a 1.0 tal que beta = 1/T
 
 // Función para inicializar la red con magnetización nula desordenada
-/*
+
 void Red_inicial(int red[N][N]) {
    int i, j;
     //Primera fila: todos -1
@@ -39,8 +40,9 @@ void Red_inicial(int red[N][N]) {
         }
     }
 }
-*/
+
 // Función para inicializar la red con magnetización con la mitad superior -1 y la mitad inferior +1
+/*
 void Red_inicial(int red[N][N]) {
     int i, j;
     for (i = 0; i < N/2; i++) {         // Mitad superior
@@ -54,6 +56,7 @@ void Red_inicial(int red[N][N]) {
         }
     }
 }
+*/
 // Función para mostrar la red en pantalla
 void Mostrar_Red(int red[N][N]) {
     int i, j;
@@ -147,17 +150,15 @@ double energia_media_por_particula(int red[N][N]) {
 }
 
 // Realiza un paso Kawasaki en la red de Ising
-void paso_Kawasaki(int red[N][N], double Temperatura) {
+double paso_Kawasaki(int red[N][N], double Temperatura) {
     int x1, y1, x2, y2;
     int dx[] = {1, -1, 0, 0};
     int dy[] = {0, 0, 1, -1};
     int vecinos[4] = {0, 1, 2, 3};
 
-    // Selecciona un sitio aleatorio
-    x1 = 1 + rand() % (N - 2); // x1 ∈ [1, N-2]
+    x1 = 1 + rand() % (N - 2);
     y1 = rand() % N;
 
-    // Baraja el orden de los vecinos (Fisher-Yates)
     for (int i = 3; i > 0; i--) {
         int j = rand() % (i + 1);
         int tmp = vecinos[i];
@@ -165,46 +166,42 @@ void paso_Kawasaki(int red[N][N], double Temperatura) {
         vecinos[j] = tmp;
     }
 
-    // Busca un vecino válido (espín diferente y dentro de la red)
     int encontrado = 0;
     for (int i = 0; i < 4; i++) {
         int d = vecinos[i];
         x2 = x1 + dx[d];
         y2 = (y1 + dy[d] + N) % N;
-        if (x2 > 0 && x2 < N-1) { // Solo filas 1 a N-2 pueden cambiar
+        if (x2 > 0 && x2 < N-1) {
             if (red[x1][y1] != red[x2][y2]) {
                 encontrado = 1;
                 break;
             }
         }
     }
-    if (!encontrado) return; // No se encontró un par válido
+    if (!encontrado) return 0.0; // No hay intercambio, dE=0
 
-    // Calcular energía antes del intercambio
     double E_antes = Energia_local(red, x1, y1, x2, y2);
 
-    // Intercambiar espines
     int temp = red[x1][y1];
     red[x1][y1] = red[x2][y2];
     red[x2][y2] = temp;
 
-    // Calcular energía después del intercambio
     double E_despues = Energia_local(red, x1, y1, x2, y2);
 
     double dE = E_despues - E_antes;
 
-    // Criterio de Metropolis
     if (dE <= 0) {
-        return;
+        return dE;
     } else {
         double r = (double)rand() / RAND_MAX;
         if (r < exp(-dE / Temperatura)) {
-            return;
+            return dE;
         } else {
             // Revertir el intercambio
             temp = red[x1][y1];
             red[x1][y1] = red[x2][y2];
             red[x2][y2] = temp;
+            return 0.0;
         }
     }
 }
@@ -273,8 +270,8 @@ double susceptibilidad_magnetica(double mags[], int num_medidas, double Temperat
 }
 
 int main() {
-    clock_t inicio = clock(); // Medir el tiempo de inicio
-    srand(time(NULL)); // Inicializar la semilla de números aleatorios
+    clock_t inicio = clock();
+    srand(time(NULL));
 
     int red[N][N];
     Red_inicial(red);
@@ -282,59 +279,63 @@ int main() {
     printf("Configuración inicial de la red:\n");
     Mostrar_Red(red);
 
-    // Abrir archivo para guardar la red en cada paso
     FILE *archivo = fopen("kawasaki_red.txt", "w");
     if (archivo == NULL) {
         printf("No se pudo abrir el archivo para escritura.\n");
         return 1;
     }
-
-    // Guardar configuración inicial
     Guardar_Red(archivo, red);
 
-    // Array para almacenar magnetizaciones, densidad, energía, calor específico y susceptibilidad
     int num_medidas = pasos / 100;
     double mags_sup[num_medidas];
     double mags_inf[num_medidas];
     double densidades[num_medidas];
     double energias[num_medidas];
     double calores[num_medidas];
-    double suscepts[num_medidas]; 
+    double suscepts[num_medidas];
     int medida_idx = 0;
 
-    // Ciclo de Monte Carlo: realiza 'k' pasos Kawasaki
+    // 1. Calcular energía total inicial UNA SOLA VEZ
+    double energia_total = energia_total_vecinos(red);
+
     int i, j;
+    // Abre el archivo antes del bucle principal
+    FILE *f_evol = fopen("evolucion_energia.txt", "w");
+    if (f_evol == NULL) {
+        printf("No se pudo abrir el archivo para guardar la energía.\n");
+        return 1;
+    }
+
+    // Bucle principal de Monte Carlo
     for (i = 0; i < pasos; i++) {
         for (j = 0; j < N*N; j++) {
-            paso_Kawasaki(red, T);
+            double dE = paso_Kawasaki(red, T);
+            energia_total += dE;
         }
-        Guardar_Red(archivo, red); // Guardar la red después de cada paso Monte Carlo
+        Guardar_Red(archivo, red);
 
-        // Calcular magnetización, densidad, energía, calor específico y susceptibilidad cada 100 pasos
         if ((i+1) % 100 == 0) {
+            // Guardar energía en el archivo en cada medida
+            fprintf(f_evol, "%d %f\n", i+1, energia_total);
+
             double m_sup = magnetizacion_mitad_superior(red);
             double m_inf = magnetizacion_mitad_inferior(red);
             mags_sup[medida_idx] = m_sup;
             mags_inf[medida_idx] = m_inf;
-
-            // Calcula la densidad media de espines positivos en la fila central
             double densidad = densidad_media_y(red, N/2);
             densidades[medida_idx] = densidad;
 
-            // Calcula la energía total de la red
-            double energia = energia_total_vecinos(red);
-            energias[medida_idx] = energia;
+            // 3. Guardar la energía total acumulada
+            energias[medida_idx] = energia_total;
 
-            // Calor específico usando todas las energías hasta ahora
             calores[medida_idx] = calor_especifico(energias, medida_idx + 1, T);
-
-            // Susceptibilidad magnética usando todas las magnetizaciones superiores hasta ahora
             suscepts[medida_idx] = susceptibilidad_magnetica(mags_sup, medida_idx + 1, T);
 
             medida_idx++;
         }
     }
 
+    fclose(f_evol);
     fclose(archivo);
 
     // Calcular la media de las magnetizaciones, densidad, energía, calor específico y susceptibilidad

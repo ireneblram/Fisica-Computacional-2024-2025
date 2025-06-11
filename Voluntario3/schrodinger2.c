@@ -118,6 +118,24 @@ double calcular_PD(cplx *phi1) {
     return suma;
 }
 
+double valor_esperado_x(cplx *phi1) {
+    double suma = 0.0;
+    for (int j = 0; j <= N; j++) {
+        double x = j * h;
+        suma += x * pow(cabs(phi1[j]), 2) * h;
+    }
+    return suma;
+}
+
+double valor_esperado_T(cplx *phi1) {
+    double suma = 0.0;
+    for (int j = 1; j < N; j++) {
+        cplx laplaciano = (phi1[j+1] - 2.0*phi1[j] + phi1[j-1]) / (h*h);
+        suma += creal(conj(phi1[j]) * laplaciano) * h;
+    }
+    return -0.5 * suma;
+}
+
 int main() {
     srand((unsigned)time(NULL));
     int repeticiones = 10;
@@ -152,6 +170,18 @@ int main() {
         phi_inicial(phi1, ciclos);
 
         if (rep == 0) {
+            // Guardar el potencial V en un archivo "V.dat"
+            FILE *f_V = fopen("V.dat", "w");
+            if (f_V == NULL) {
+                printf("No se pudo abrir el fichero V.dat\n");
+                return 1;
+            }
+            for (int j = 0; j <= N; j++) {
+                double x = j * h;
+                fprintf(f_V, "%.8f,%.10f\n", x, V[j]);
+            }
+            fclose(f_V);
+
             // Guardar estado inicial
             for (int j = 0; j <= N; j++) {
                 double x = j * h;
@@ -160,7 +190,17 @@ int main() {
             fprintf(f_phiV, "\n");
 
             // Buscar el máximo global de PD y guardar datos en cada paso
-            double PD_max = calcular_PD(phi1);
+            FILE *f_PD = fopen("PD_vs_n.dat", "w");
+            if (f_PD == NULL) {
+                printf("No se pudo abrir el fichero PD_vs_n.dat\n");
+                return 1;
+            }
+
+            // Guardar estado inicial
+            double PD_act = calcular_PD(phi1);
+            fprintf(f_PD, "%d %.10f\n", 0, PD_act);
+
+            double PD_max = PD_act;
             nD = 0;
             for (int n = 1; n < T; n++) {
                 paso_temporal(phi1, chi, A1, A2, A3, b, gamma, alfa, beta, s_tilde, phi_next);
@@ -171,14 +211,18 @@ int main() {
                 }
                 fprintf(f_phiV, "\n");
 
-                double PD_act = calcular_PD(phi1);
+                PD_act = calcular_PD(phi1);
+                fprintf(f_PD, "%d %.10f\n", n, PD_act);
+
                 if (PD_act > PD_max) {
                     PD_max = PD_act;
                     nD = n;
                 }
             }
+            fclose(f_PD);
             fclose(f_phiV);
             printf("nD calculado (máximo global) = %d\n", nD);
+            printf("PD(nD) = %.10f\n", PD_max);
         }else{
             // Evolucionar hasta nD
             for (int n = 0; n < nD; n++) {
@@ -187,6 +231,13 @@ int main() {
             double PD = calcular_PD(phi1);
             double p = (double)rand() / (RAND_MAX + 1.0);
             printf("PD = %.10f, p = %.10f\n", PD, p);
+
+            double x_esperado = valor_esperado_x(phi1);
+            printf("Valor esperado de la posición <x> = %.10f\n", x_esperado);
+
+            double T_esperado = valor_esperado_T(phi1);
+            printf("Valor esperado de la energía cinética <T> = %.10f\n", T_esperado);
+
             // Guardar los valores de phi1 en el archivo
             for (int j = 0; j <= N; j++) {
                 fprintf(f_phiV, "%.10f,%.10f\n", creal(phi1[j]), cimag(phi1[j]));
@@ -201,7 +252,7 @@ int main() {
 
     printf("mT = %d\n", mT);
     double transmision = (double)mT / (repeticiones-1);
-    printf("Coeficiente de transmisión estimado: %f\n", transmision);
+    printf("Coeficiente de transmisión estimado: %.10f\n", transmision);
 
     return 0;
 }

@@ -45,8 +45,8 @@ import io
 
 # Parámetros
 # ========================================
-file_in = "phi_V.dat" # Nombre del fichero de datos
-file_out = "schrodinger" # Nombre del fichero de salida (sin extensión)
+file_in = "multibarrera.dat" # Nombre del fichero de datos
+file_out = "multibarrera1" # Nombre del fichero de salida (sin extensión)
 interval = 10 # Tiempo entre fotogramas en milisegundos
 save_to_file = True # False: muestra la animación por pantalla,
                      # True: la guarda en un fichero

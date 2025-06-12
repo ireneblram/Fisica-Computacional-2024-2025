@@ -1,5 +1,7 @@
-Repositorio PROBLEMAS VOLUNTARIOS de física computacional
+Repositorio para ENTREGAS de física computacional
 
-Problemas: Voluntario 2 y Voluntario 3
+Introducción Python Clase Filipa
+
+PROBLEMAS VOLUNTARIOS: Voluntario 2 y Voluntario 3
 
 Irene Blanco Ramos

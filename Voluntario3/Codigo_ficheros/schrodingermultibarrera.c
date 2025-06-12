@@ -149,6 +149,7 @@ double valor_esperado_T(cplx *phi1) {
 }
 
 int main() {
+    clock_t inicio = clock();
     srand((unsigned)time(NULL));
     int repeticiones = 400;
     int mT = 0;
@@ -162,7 +163,7 @@ int main() {
     cplx A1[N + 1], A2[N + 1], A3[N + 1], b[N + 1];
     cplx gamma[N - 1], alfa[N], beta[N];
     double V[N + 1];
-    cplx phi_next[N + 1];
+    cplx phi_next[N + 1];  
 
     int nD = 0;
 
@@ -248,6 +249,11 @@ int main() {
     printf("Coeficiente de transmisión estimado: %f\n", transmision);
 
     fclose(f_PD_vs_t);
+
+    // Medir el tiempo de finalización
+    clock_t fin = clock();
+    double tiempo = (double)(fin - inicio) / CLOCKS_PER_SEC;
+    printf("\nTiempo de ejecución: %.5f segundos.\n", tiempo);
 
     return 0;
 }

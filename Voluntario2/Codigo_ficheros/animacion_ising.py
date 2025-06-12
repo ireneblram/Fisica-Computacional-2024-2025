@@ -48,9 +48,9 @@ import io
 # Parámetros
 # ========================================
 file_in = "kawasaki_red.txt" # Nombre del fichero de datos
-file_out = "ising" # Nombre del fichero de salida (sin extensión)
+file_out = "ising4" # Nombre del fichero de salida (sin extensión)
 interval = 0.1 # Tiempo entre fotogramas en milisegundos
-save_to_file = False # False: muestra la animación por pantalla,
+save_to_file = True # False: muestra la animación por pantalla,
                      # True: la guarda en un fichero
 dpi = 150 # Calidad del vídeo de salida (dots per inch)
 
@@ -81,6 +81,9 @@ for frame_data_str in data_str.split("\n\n"):
 # ========================================
 # Crea los objetos figure y axis
 fig, ax = plt.subplots()
+
+# Título de la animación
+ax.set_title("Evolución del Modelo de Ising con dinámica de Kawasaki\n$N=128$,$T=4.0$, 10000 pasos Monte Carlo", fontsize=14)
 
 # Define el rango de los ejes
 ax.axis("off")  # No muestra los ejes

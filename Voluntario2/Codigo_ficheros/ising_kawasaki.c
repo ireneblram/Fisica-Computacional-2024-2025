@@ -3,9 +3,9 @@
 #include <math.h>
 #include <time.h>
 
-#define N 32 // Dimensión de la red cuadrada
-#define pasos 100000 //Número de pasos de Monte Carlo 
-#define T 1.0 // Temperatura inicial
+#define N 128 // Dimensión de la red cuadrada
+#define pasos 10000 //Número de pasos de Monte Carlo 
+#define T 4.0 // Temperatura inicial
 // K_BOLTZMANN 1.0 Constante de Boltzmann se ha normlizado a 1.0 tal que beta = 1/T
 
 // Función para inicializar la red con magnetización nula desordenada
@@ -174,11 +174,11 @@ double paso_Kawasaki(int red[N][N], double Temperatura) {
         if (x2 > 0 && x2 < N-1) {
             if (red[x1][y1] != red[x2][y2]) {
                 encontrado = 1;
-                break;
+                break; // Encontró un vecino válido para el intercambios
             }
         }
     }
-    if (!encontrado) return 0.0; // No hay intercambio, dE=0
+    if (!encontrado) return 0.0; // No hay intercambio, dE=0 
 
     double E_antes = Energia_local(red, x1, y1, x2, y2);
 

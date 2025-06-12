@@ -8,7 +8,7 @@
 #define PI 3.141592653589793
 #define h 0.01
 #define N 1000
-#define T 2000
+#define T 800
 
 typedef double complex cplx;
 
@@ -162,7 +162,7 @@ int main() {
     int mT = 0;
 
     int ciclos = N/16;
-    double lambda = 1.0;
+    double lambda = 0.3;
     double k_tilde = (2.0 * PI * ciclos) / N;
     double s_tilde = 1.0 / (4.0 * k_tilde * k_tilde);
 
